@@ -31,7 +31,6 @@ public static class SeedData
         ("U2", "J2"),
         ("U4", "J1"),
         ("U5", "J2"),
-        ("U3", "J3"),
     ];
 
     private static readonly DateTimeOffset ThreadStart = new(2026, 10, 1, 9, 0, 0, TimeSpan.Zero);
