@@ -5,7 +5,7 @@ description: Implement the backend (.NET API) tasks of a spec for one shippable 
 
 # Implement Backend
 
-Implement the **Backend** tasks from the SU's spec in `specs/`. If there is no spec, stop and ask for one (or run create-specs first).
+Implement the **Backend** tasks from the SU's spec in `docs/features/<feature>/`. If there is no spec, stop and ask for one (or run create-specs first).
 
 ## Before coding
 1. Read the spec: goal, in scope, out of scope, API contract, acceptance criteria. Do not build anything listed as out of scope.

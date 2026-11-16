@@ -5,7 +5,7 @@ description: Implement the frontend (React + TypeScript) tasks of a spec for one
 
 # Implement Frontend
 
-Implement the **Frontend** tasks from the SU's spec in `specs/`. If there is no spec, stop and ask for one (or run create-specs first).
+Implement the **Frontend** tasks from the SU's spec in `docs/features/<feature>/`. If there is no spec, stop and ask for one (or run create-specs first).
 
 ## Before coding
 1. Read the spec: goal, in scope, out of scope, UI notes, API contract, acceptance criteria. Do not build anything listed as out of scope.
