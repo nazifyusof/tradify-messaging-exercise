@@ -40,6 +40,10 @@ Review the diff against the base branch (`git diff main...HEAD`, plus uncommitte
 - Loading, empty, and error states are handled.
 - Existing components are reused rather than duplicated.
 
+**Docs**
+- If the diff adds or changes endpoints, models, persistence, or UI architecture, `docs/ARCHITECTURE.md` is updated in the same change (endpoint table, data model, flows, known gaps). Flag it as "Should fix" if missing or stale.
+- If the diff fixes a gap listed under "Known gaps" in that file, the entry is removed.
+
 **Hygiene**
 - No debug logging, commented-out code, TODOs without a reason, or secrets.
 - Naming matches the surrounding code.

@@ -8,7 +8,7 @@ description: Turn a feature request or idea into a short spec for one shippable 
 Produce a one-page spec for ONE shippable unit (SU). Keep it short enough to read in two minutes. Do not write code.
 
 ## Steps
-1. Read the request and the relevant existing code (models, endpoints, components) so the spec reflects what exists.
+1. Read `docs/ARCHITECTURE.md` and the relevant existing code (models, endpoints, components) so the spec reflects what exists.
 2. If the request is large, first propose a split into SUs (themes, then SUs, ordered, with reasons), then spec only the first one.
 3. List open questions and state the assumption you are making for each, so work can proceed.
 4. Write the spec to `specs/<short-name>.md` using the template below.
@@ -41,6 +41,7 @@ Why it is first or next, what it unlocks, what risk it reduces.
 
 ## Test plan
 - Backend tests to add. Frontend checks. Manual smoke steps.
+- Docs: if the SU changes endpoints, models, persistence, or UI architecture, include "update `docs/ARCHITECTURE.md`" as a task.
 
 ## Rollout
 - Feature flag name (if any), safe to deploy daily?, rollback approach.

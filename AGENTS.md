@@ -1,35 +1,57 @@
-# Repo conventions
+# AGENTS.md
 
-- Backend: .NET 10. Run `dotnet test backend/Tradify.sln` before you finish.
+## Read first
+- Before any structural change (new endpoints, models, persistence, or UI architecture), read `docs/ARCHITECTURE.md`.
+
+## Keeping ARCHITECTURE.md current
+Update `docs/ARCHITECTURE.md` in the same change whenever you:
+- Add, remove, or change an API endpoint, including its auth or role rules.
+- Add or change a domain model or repository interface in `backend/src/Tradify.Core`.
+- Change how real-time updates work (polling, SSE, etc.) or how data is stored.
+- Add a new top-level frontend component, page, or data-flow pattern.
+- Change role isolation rules (who can see which threads).
+- Make a decision that future contributors would otherwise have to rediscover (briefly note the choice and why).
+
+Guidelines:
+- Edit only the sections your change affects. Keep it short and accurate, not exhaustive.
+- Remove or correct anything your change makes false. A stale architecture doc is worse than none.
+- If a change doesn't affect architecture (bug fix, copy tweak, styling, tests only), leave the file alone.
+- If `docs/ARCHITECTURE.md` doesn't exist yet, create it with: overview, backend structure, frontend structure, data flow, role isolation, and key decisions.
+
+## Repo layout
+- `backend/` - .NET 10 API (`backend/Tradify.sln`)
+  - `backend/src/Tradify.Core` - domain models and repository interfaces
+- `frontend/` - React + TypeScript on Vite
+- `docs/ARCHITECTURE.md` - system design and key decisions
+- `start.sh` - starts the whole app
+
+## Repo conventions
 - Keep persistence behind the repository interfaces in `backend/src/Tradify.Core`.
 - Do not add EF Core, Docker, or real database dependencies.
+- Do not install external UI libraries or CSS frameworks. `package.json` must stay clean.
 - Keep seed data synthetic.
 - Do not commit secrets or real personal data.
-- Frontend: run `npm run build` in `frontend/` after changes.
 
-# Tradify Team Messaging - Agent Context & Rules
+## Before you finish (checklist)
+1. Backend changes: `dotnet test backend/Tradify.sln` passes. Add unit tests for every new endpoint or model. The 13 existing tests must stay green.
+2. Frontend changes: `npm run build` in `frontend/` passes (or `npx tsc --noEmit` for a quick type check).
+3. Architecture-relevant changes: `docs/ARCHITECTURE.md` is updated (see above).
+4. The app still starts with `./start.sh`.
 
-## 1. Product Domain & Scale Assumptions
-- Core Objective: Introduce 'teams' into Tradify to support real-time two-way team messaging between team members and between administrators and field workers (tradies), linked/recorded against jobs or other parts of Tradify.
-- Scale Profile: 20,000 paying trades companies, 60,000 active tradies total, and strictly 1 to 12 staff members per company.
-- Design Implication of Scale: Because a company has at most 12 staff members, optimize UI and data structures for small, high-trust teams (e.g., simple flat member lists, lightweight polling/SSE for real-time updates, zero need for complex enterprise pagination or deep role hierarchies).
-- Delivery Philosophy (Shape Up / Daily Releases): Work must be broken down into small, vertical, incremental Shippable Units (SUs) that de-risk technical and product unknowns and could be safely deployed to production daily.
+## Product domain
+- Objective: introduce "teams" into Tradify to support real-time two-way messaging between team members, and between administrators and field workers (tradies), linked to jobs or other parts of Tradify.
+- Scale: 20,000 paying trades companies, 60,000 active tradies, and 1 to 12 staff per company.
+- Design implication: optimize for small, high-trust teams. Use simple flat member lists and lightweight polling/SSE for real-time updates. No enterprise pagination or deep role hierarchies.
+- Delivery: work in small, vertical Shippable Units (SUs) that de-risk technical and product unknowns and could be deployed to production daily (Shape Up).
 
-## 2. Existing Starter Codebase Baseline
-- Sign in: Stub login with 5 demo users (3 staff, 2 customers). Any password works.
-- Auth Mechanism: The signed-in user is passed via the `X-User-Id` HTTP header.
-- Existing Endpoints (.NET 10 API): 4 endpoints currently exist: log in, list my jobs, list a job's messages, and post a message. Data is held in memory and resets on API restart.
-- Existing Tests: 13 backend tests exist and must remain green.
-- Existing UI Patterns (React + TypeScript on Vite):
-  - Conversation list shows assigned jobs styled like WhatsApp/iMessage, displaying the last message and its timestamp.
-  - Thread view renders messages grouped under day headings. Current user's messages are blue bubbles on the right; others' messages are white bubbles on the left with the sender's name.
-  - Composer input: `Enter` posts the message immediately (updating both the thread and the sidebar conversation list); `Shift+Enter` inserts a newline.
+## Existing baseline
+- Auth: stub login with 5 demo users (3 staff, 2 customers). Any password works. The signed-in user is passed via the `X-User-Id` header.
+- API: 4 endpoints (log in, list my jobs, list a job's messages, post a message). Data is in memory and resets on restart.
+- UI (React + TypeScript on Vite):
+  - Conversation list shows assigned jobs WhatsApp/iMessage-style, with last message and timestamp.
+  - Thread view groups messages under day headings. Own messages are blue bubbles on the right. Others are white bubbles on the left with the sender's name.
+  - Composer: `Enter` posts immediately (updating thread and sidebar), `Shift+Enter` inserts a newline.
 
-## 3. Strict Technical & UX Guardrails
-- Role Isolation: Strictly distinguish between the 3 staff demo users (admins/field workers) and the 2 customer demo users. Internal staff team threads must never be exposed to customer users.
-- UI Consistency: Reuse existing WhatsApp/iMessage-style chat bubble components, day-heading grouping, and `Enter`/`Shift+Enter` composer behavior for team threads.
-- Zero Extra UI Packages: Do NOT install any external UI libraries or CSS frameworks (`package.json` must remain clean).
-- Verification Loop:
-  - Startup runs via `./start.sh`.
-  - Run `dotnet test` after every backend change and add unit tests for new endpoints/models.
-  - Run `npx tsc --noEmit` (or `npm run build`) after frontend changes to guarantee type safety.
+## Guardrails
+- Role isolation: internal staff team threads must never be exposed to customer users. Distinguish the 3 staff users (admins/field workers) from the 2 customers on every new endpoint.
+- UI consistency: reuse the existing chat bubble components, day-heading grouping, and `Enter`/`Shift+Enter` composer behavior for team threads.
