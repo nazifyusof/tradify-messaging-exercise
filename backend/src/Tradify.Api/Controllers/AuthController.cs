@@ -5,7 +5,7 @@ namespace Tradify.Api.Controllers;
 
 public sealed record LoginRequest(string Username, string Password);
 
-public sealed record LoginResponse(string Id, string Username, string Name);
+public sealed record LoginResponse(string Id, string Username, string Name, UserRole Role, string CompanyId);
 
 // Exercise stub: any password is accepted for a known username. Not real auth.
 [ApiController]
@@ -24,6 +24,6 @@ public sealed class AuthController(IUserRepository users) : ControllerBase
             return Unauthorized();
         }
 
-        return Ok(new LoginResponse(user.Id, user.Username, user.Name));
+        return Ok(new LoginResponse(user.Id, user.Username, user.Name, user.Role, user.CompanyId));
     }
 }

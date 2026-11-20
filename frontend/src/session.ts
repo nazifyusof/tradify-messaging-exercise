@@ -8,9 +8,13 @@ export function loadSession(): SessionUser | null {
     return null;
   }
   try {
-    const user = JSON.parse(raw) as SessionUser;
+    const user = JSON.parse(raw) as Partial<SessionUser>;
+    if (!user.role || !user.id) {
+      localStorage.removeItem(STORAGE_KEY);
+      return null;
+    }
     setCurrentUser(user.id);
-    return user;
+    return user as SessionUser;
   } catch {
     localStorage.removeItem(STORAGE_KEY);
     return null;

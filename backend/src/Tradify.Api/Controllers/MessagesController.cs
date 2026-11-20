@@ -10,19 +10,25 @@ public sealed record CreateMessageRequest(string Body, string? SenderId);
 public sealed class MessagesController(
     IMessageRepository messages,
     IJobAssignmentRepository assignments,
+    IUserRepository users,
     ILogger<MessagesController> logger) : ControllerBase
 {
     [HttpPost]
     public IActionResult Post(string jobId, [FromBody] CreateMessageRequest request)
     {
-        var userId = AuthStub.GetUserId(Request);
-        if (userId is null || !assignments.IsAssigned(userId, jobId))
+        var user = AuthStub.GetUser(Request, users);
+        if (user is null)
+        {
+            return Unauthorized();
+        }
+
+        if (!assignments.IsAssigned(user.Id, jobId) ||
+            (request.SenderId is not null && request.SenderId != user.Id))
         {
             return StatusCode(StatusCodes.Status403Forbidden);
         }
 
-        var senderId = request.SenderId ?? userId;
-        var message = new Message(Guid.NewGuid(), jobId, senderId, request.Body, DateTimeOffset.UtcNow);
+        var message = new Message(Guid.NewGuid(), jobId, user.Id, request.Body, DateTimeOffset.UtcNow);
         messages.Add(message);
         logger.LogInformation("Posted message {Body} to job {JobId}", request.Body, jobId);
 
@@ -32,8 +38,13 @@ public sealed class MessagesController(
     [HttpGet]
     public IActionResult List(string jobId)
     {
-        var userId = AuthStub.GetUserId(Request);
-        if (userId is null || !assignments.IsAssigned(userId, jobId))
+        var user = AuthStub.GetUser(Request, users);
+        if (user is null)
+        {
+            return Unauthorized();
+        }
+
+        if (!assignments.IsAssigned(user.Id, jobId))
         {
             return StatusCode(StatusCodes.Status403Forbidden);
         }

@@ -9,11 +9,11 @@ public static class SeedData
     // Customers: C1 Chris Walker (J1), C2 Dana Price (J2)
     public static readonly IReadOnlyList<User> Users =
     [
-        new User("U1", "alex", "Alex Morgan"),
-        new User("U2", "sam", "Sam Lee"),
-        new User("U3", "priya", "Priya Shah"),
-        new User("U4", "chris", "Chris Walker"),
-        new User("U5", "dana", "Dana Price"),
+        new User("U1", "alex", "Alex Morgan", UserRole.Admin, "CO1"),
+        new User("U2", "sam", "Sam Lee", UserRole.FieldWorker, "CO1"),
+        new User("U3", "priya", "Priya Shah", UserRole.FieldWorker, "CO1"),
+        new User("U4", "chris", "Chris Walker", UserRole.Customer, "CO1"),
+        new User("U5", "dana", "Dana Price", UserRole.Customer, "CO1"),
     ];
 
     // Jobs: J1 Kitchen refit, J2 Boiler service, J3 Roof repair (no assignments)

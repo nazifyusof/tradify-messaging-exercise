@@ -18,10 +18,14 @@ export type JobSummary = {
   lastMessage: Message | null;
 };
 
+export type UserRole = "Admin" | "FieldWorker" | "Customer";
+
 export type SessionUser = {
   id: string;
   username: string;
   name: string;
+  role: UserRole;
+  companyId: string;
 };
 
 // Defaults to same-origin; the Vite dev server proxies /auth and /jobs to the API.

@@ -93,6 +93,59 @@ public sealed class MessagesApiTests : IDisposable
         Assert.Equal(0, document.RootElement.GetArrayLength());
     }
 
+    [Fact]
+    public async Task PostMessage_SpoofedSenderId_Returns403AndNotStored()
+    {
+        using var request = Request(HttpMethod.Post, "/jobs/J1/messages", "U1");
+        request.Content = JsonContent.Create(new { body = "Spoofed", senderId = "U4" });
+
+        var response = await _client.SendAsync(request);
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+
+        using var list = Request(HttpMethod.Get, "/jobs/J1/messages", "U1");
+        var listResponse = await _client.SendAsync(list);
+        using var document = JsonDocument.Parse(await listResponse.Content.ReadAsStringAsync());
+        Assert.Equal(SeededJ1Bodies.Length, document.RootElement.GetArrayLength());
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("U1")]
+    public async Task PostMessage_OwnOrOmittedSenderId_Returns201WithCallerAsSender(string? senderId)
+    {
+        using var request = Request(HttpMethod.Post, "/jobs/J1/messages", "U1");
+        request.Content = JsonContent.Create(new { body = "Hello", senderId });
+
+        var response = await _client.SendAsync(request);
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+
+        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        Assert.Equal("U1", document.RootElement.GetProperty("senderId").GetString());
+    }
+
+    [Theory]
+    [InlineData("GET", null)]
+    [InlineData("GET", "U999")]
+    [InlineData("POST", null)]
+    [InlineData("POST", "U999")]
+    public async Task MessagesEndpoints_MissingOrUnknownUser_Returns401(string method, string? userId)
+    {
+        using var request = new HttpRequestMessage(new HttpMethod(method), "/jobs/J1/messages");
+        if (userId is not null)
+        {
+            request.Headers.Add("X-User-Id", userId);
+        }
+
+        if (method == "POST")
+        {
+            request.Content = JsonContent.Create(new { body = "Hi" });
+        }
+
+        var response = await _client.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
     public void Dispose()
     {
         _client.Dispose();

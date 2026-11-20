@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Http;
+using Tradify.Core;
 
 namespace Tradify.Api;
 
@@ -9,4 +10,10 @@ public static class AuthStub
 
     public static string? GetUserId(HttpRequest request) =>
         request.Headers.TryGetValue(UserHeader, out var value) ? value.ToString() : null;
+
+    public static User? GetUser(HttpRequest request, IUserRepository users)
+    {
+        var userId = GetUserId(request);
+        return string.IsNullOrWhiteSpace(userId) ? null : users.Get(userId);
+    }
 }

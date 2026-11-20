@@ -41,8 +41,10 @@ There is no database. Data lives in memory. Logical schema:
 | Id | string | `U1`..`U5` |
 | Username | string | used to log in |
 | Name | string | display name |
+| Role | `UserRole` | `Admin`, `FieldWorker` or `Customer` |
+| CompanyId | string | `CO1` for all seed users (no company model yet) |
 
-No role field. Staff versus customer is only described in seed comments.
+`IsStaff` is true for Admin and FieldWorker. Seed: U1 Admin, U2 and U3 FieldWorker, U4 and U5 Customer.
 
 **Job** (`Job.cs`)
 
@@ -97,7 +99,7 @@ All are registered as singletons in `Program.cs`. Message and assignment repos a
 
 ### Auth (stub)
 - `POST /auth/login` looks up the username. Any password works. Returns the user, or 401.
-- All other calls identify the user with the `X-User-Id` request header (`AuthStub.GetUserId`).
+- All other calls identify the user with the `X-User-Id` request header (`AuthStub.GetUser` returns the `User` or null for a missing or unknown id).
 - There is no token, session, or signature. Anyone can send any user id. Exercise only.
 
 ### Other
@@ -109,10 +111,10 @@ All are registered as singletons in `Program.cs`. Message and assignment repos a
 
 | Method | Path | Auth | Success | Errors |
 |--------|------|------|---------|--------|
-| POST | `/auth/login` | none | 200 `{id, username, name}` | 401 unknown or blank username |
+| POST | `/auth/login` | none | 200 `{id, username, name, role, companyId}` (`role` serialised as a string) | 401 unknown or blank username |
 | GET | `/jobs` | `X-User-Id` of a known user | 200 list of `JobSummary` | 401 missing or unknown user |
-| GET | `/jobs/{jobId}/messages` | `X-User-Id`, must be assigned to the job | 200 list of `Message` | 403 missing header or not assigned |
-| POST | `/jobs/{jobId}/messages` | `X-User-Id`, must be assigned to the job | 201 `Message` | 403 missing header or not assigned |
+| GET | `/jobs/{jobId}/messages` | `X-User-Id`, must be assigned to the job | 200 list of `Message` | 401 missing or unknown user, 403 not assigned |
+| POST | `/jobs/{jobId}/messages` | `X-User-Id`, must be assigned to the job | 201 `Message` | 401 missing or unknown user, 403 not assigned or `senderId` not the caller |
 
 ### Payloads
 
@@ -129,7 +131,7 @@ All are registered as singletons in `Program.cs`. Message and assignment repos a
 }
 
 // POST /jobs/{jobId}/messages request
-{ "body": "Hello", "senderId": null }   // senderId optional
+{ "body": "Hello", "senderId": null }   // senderId optional; if set it must equal the caller, else 403
 
 // Message
 { "id": "guid", "jobId": "J1", "senderId": "U1", "body": "Hello", "createdAt": "2026-10-01T09:00:00+00:00" }
@@ -138,7 +140,7 @@ All are registered as singletons in `Program.cs`. Message and assignment repos a
 ### Logic notes
 - `GET /jobs`: take the user's job ids, load each job, attach participants (sorted by name) and the last message. Sort by last message time (newest first, no messages last), then by title.
 - `GET .../messages`: messages for the job in time order, capped with `Take(50)`. Because the list is oldest first, this returns the oldest 50, not the latest 50.
-- `POST .../messages`: the sender is `request.SenderId ?? userId`, `Id` is a new Guid, `CreatedAt` is `UtcNow`. The body is logged by `ILogger`.
+- `POST .../messages`: the sender is always the caller, `Id` is a new Guid, `CreatedAt` is `UtcNow`. The body is logged by `ILogger`.
 
 ## 6. Main flows
 
@@ -181,10 +183,10 @@ The Vite dev server proxies `/auth` and `/jobs` to `http://localhost:5294` (over
 
 ## 8. Tests
 
-13 xUnit integration tests (all passing), each running the real app in memory:
-- Login: known user with any password, unknown user returns 401.
+23 xUnit integration tests (all passing), each running the real app in memory:
+- Login: known user with any password, role and company returned, unknown user returns 401.
 - Jobs: only assigned jobs, participants and last message included, user with no jobs gets empty list, missing or unknown user returns 401.
-- Messages: assigned user can post (201) and list (in order), unassigned user gets 403 on both, empty thread returns 200 with an empty list.
+- Messages: assigned user can post (201) and list (in order), unassigned user gets 403 on both, missing or unknown user gets 401, spoofed `senderId` gets 403 and is not stored, empty thread returns 200 with an empty list.
 
 Run: `dotnet test backend/Tradify.sln`. Frontend: `npm run build` in `frontend/`. There are no frontend tests.
 
@@ -192,11 +194,10 @@ Run: `dotnet test backend/Tradify.sln`. Frontend: `npm run build` in `frontend/`
 
 | Area | Gap |
 |------|-----|
-| Auth | `X-User-Id` can be forged. No real session. Message endpoints do not check the user exists, and return 403 instead of 401 when the header is missing |
-| Spoofing | `POST` accepts a client-supplied `senderId`, so a user can post as someone else |
+| Auth | `X-User-Id` can be forged. No real session. |
 | Validation | Message body is not validated (empty or very long text is accepted) |
 | Privacy | The message body is written to logs |
-| Roles | No staff versus customer model. Internal team threads would need role checks |
+| Roles | Roles and `CompanyId` exist on `User` but are not yet enforced anywhere. No company model |
 | Paging | `Take(50)` returns the oldest 50 messages, not the newest |
 | Real time | No push or polling. Messages from others appear only on reload |
 | Unused code | `JobThreadService.CanView` is unused and does not check assignment |

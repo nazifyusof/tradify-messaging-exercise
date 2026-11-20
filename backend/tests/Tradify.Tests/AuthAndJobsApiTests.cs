@@ -29,6 +29,20 @@ public sealed class AuthAndJobsApiTests : IDisposable
         Assert.Equal("Alex Morgan", document.RootElement.GetProperty("name").GetString());
     }
 
+    [Theory]
+    [InlineData("alex", "Admin")]
+    [InlineData("sam", "FieldWorker")]
+    [InlineData("chris", "Customer")]
+    public async Task Login_ReturnsRoleAndCompany(string username, string role)
+    {
+        var response = await _client.PostAsJsonAsync("/auth/login", new { username, password = "x" });
+        response.EnsureSuccessStatusCode();
+
+        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        Assert.Equal(role, document.RootElement.GetProperty("role").GetString());
+        Assert.Equal("CO1", document.RootElement.GetProperty("companyId").GetString());
+    }
+
     [Fact]
     public async Task Login_UnknownUsername_Returns401()
     {

@@ -1,9 +1,12 @@
+using System.Text.Json.Serialization;
 using Tradify.Core;
 using Tradify.Seed;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 
 builder.Services.AddSingleton<IMessageRepository>(_ =>
 {
